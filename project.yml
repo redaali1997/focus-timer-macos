@@ -1,0 +1,38 @@
+name: FocusTimer
+options:
+  bundleIdPrefix: com.redaali
+  deploymentTarget:
+    macOS: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "15.0"
+targets:
+  FocusTimer:
+    type: application
+    platform: macOS
+    sources:
+      - Sources
+      - path: Resources
+        buildPhase: resources
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: Focus Timer
+        CFBundleName: Focus Timer
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        LSApplicationCategoryType: public.app-category.productivity
+        NSHumanReadableCopyright: "Port of Focus Timer (GPL-3.0) for macOS"
+        CFBundleURLTypes:
+          - CFBundleURLName: com.redaali.FocusTimer
+            CFBundleURLSchemes: [focustimer]
+    settings:
+      base:
+        PRODUCT_NAME: Focus Timer
+        PRODUCT_BUNDLE_IDENTIFIER: com.redaali.FocusTimer
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        ENABLE_HARDENED_RUNTIME: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO

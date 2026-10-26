@@ -1,0 +1,26 @@
+#!/bin/sh
+# Command-line control for Focus Timer.
+# Usage: focustimer [toggle|start|pause|resume|skip|stop|reset|extend [seconds]|rewind|
+#                    pomodoro|short-break|long-break|break|task <name>|show|stats|compact|status]
+
+STATUS_FILE="$HOME/Library/Application Support/FocusTimer/status.json"
+cmd="${1:-toggle}"
+
+case "$cmd" in
+  status)
+    cat "$STATUS_FILE" 2>/dev/null || echo '{"status":"unknown"}'
+    ;;
+  task)
+    name=$(printf %s "$2" | /usr/bin/python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.stdin.read()))' 2>/dev/null || printf %s "$2")
+    open -g "focustimer://task?name=$name"
+    ;;
+  extend)
+    open -g "focustimer://extend?seconds=${2:-60}"
+    ;;
+  -h|--help|help)
+    sed -n '2,4p' "$0"
+    ;;
+  *)
+    open -g "focustimer://$cmd"
+    ;;
+esac
