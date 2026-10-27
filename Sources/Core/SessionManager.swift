@@ -209,12 +209,24 @@ final class SessionManager: ObservableObject {
             if elapsed >= duration { finish() }
         } else if status == .paused, let pausedAt,
                   now.timeIntervalSince(pausedAt) > TimeInterval(settings.expiryTimeout) {
-            resetSession()
-        } else if status == .waiting, waitsForActivity, let waitingSince {
+            expire()
+        } else if status == .waiting, waitsForActivity, let waitingSince, !Self.isScreenLocked {
             // Any mouse/keyboard input after the break ended means the user is back.
+            // Input on the lock screen (e.g. waking the Mac) doesn't count.
             let idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
             if idle < now.timeIntervalSince(waitingSince) - 1 { start() }
         }
+    }
+
+    /// A paused interval went stale. With start-on-activity, wait for the user instead of stopping.
+    private func expire() {
+        guard settings.startPomodoroOnActivity else { return resetSession() }
+        recordCurrent(completed: false)
+        completedInCycle = 0
+        resetInterval(to: .pomodoro)
+        waitingSince = Date()
+        status = .waiting
+        emit(.stopped)
     }
 
     private func finish() {
@@ -274,6 +286,12 @@ final class SessionManager: ObservableObject {
         }
         wnc.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated { SessionManager.shared.tick() }
+            // Woke without a lock screen: no unlock notification will come, so resume here.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                MainActor.assumeIsolated {
+                    if !SessionManager.isScreenLocked { SessionManager.shared.screenUnlocked() }
+                }
+            }
         }
     }
 
@@ -281,6 +299,11 @@ final class SessionManager: ObservableObject {
         guard settings.pauseOnLockScreen, status == .running, phase == .pomodoro else { return }
         pause()
         pausedByLock = true
+    }
+
+    static var isScreenLocked: Bool {
+        let session = CGSessionCopyCurrentDictionary() as? [String: Any]
+        return session?["CGSSessionScreenIsLocked"] as? Bool ?? false
     }
 
     private func screenUnlocked() {
