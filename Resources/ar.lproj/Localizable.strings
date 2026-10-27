@@ -217,4 +217,5 @@
 "%@ — running" = "%@ — شغال";
 "Starts when you're back" = "هيبدأ أول ما ترجع";
 "The pomodoro starts as soon as you move the mouse or type." = "البومودورو هيبدأ أول ما تحرّك الماوس أو تكتب.";
-"After a break, start the pomodoro when I'm back (mouse or keyboard)" = "بعد الاستراحة، ابدأ البومودورو لما أرجع (ماوس أو كيبورد)";
+"Start the pomodoro when I'm back (mouse or keyboard)" = "ابدأ البومودورو لما أرجع (ماوس أو كيبورد)";
+"After a break, when the app opens, or after you stopped the timer and left the Mac for 5 minutes." = "بعد الاستراحة، أو لما البرنامج يفتح، أو لو وقّفت المؤقت وسبت الجهاز 5 دقايق.";

@@ -64,8 +64,13 @@ struct TimerSettings: View {
             Section("Flow") {
                 Toggle("Wait for confirmation before starting a break", isOn: $s.confirmStartingBreak)
                 Toggle("Wait for confirmation before starting a pomodoro", isOn: $s.confirmStartingPomodoro)
-                Toggle("After a break, start the pomodoro when I'm back (mouse or keyboard)", isOn: $s.startPomodoroOnActivity)
-                    .disabled(s.confirmStartingPomodoro)
+                VStack(alignment: .leading, spacing: 2) {
+                    Toggle("Start the pomodoro when I'm back (mouse or keyboard)", isOn: $s.startPomodoroOnActivity)
+                    Text("After a break, when the app opens, or after you stopped the timer and left the Mac for 5 minutes.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .disabled(s.confirmStartingPomodoro)
                 Toggle("Pause pomodoro when the screen locks or Mac sleeps", isOn: $s.pauseOnLockScreen)
                 Picker("Session expires after inactivity", selection: $s.expiryTimeout) {
                     Text("15 minutes").tag(900)

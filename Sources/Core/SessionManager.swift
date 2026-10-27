@@ -63,6 +63,11 @@ final class SessionManager: ObservableObject {
     private var pausedAt: Date?
     private var stoppedAt: Date?
     private var waitingSince: Date?
+    private var lastTick = Date()
+    /// While stopped: the user has since been away (idle, locked or asleep),
+    /// so their return starts a pomodoro (with start-on-activity).
+    private var userWasAway = false
+    private static let awayThreshold: TimeInterval = 300
     private var announced = false
     private var pausedByLock = false
     private var ticker: Timer?
@@ -133,6 +138,7 @@ final class SessionManager: ObservableObject {
         resetInterval(to: .pomodoro)
         status = .stopped
         stoppedAt = Date()
+        userWasAway = false
         emit(.stopped)
     }
 
@@ -158,6 +164,14 @@ final class SessionManager: ObservableObject {
         elapsed = 0
         announced = false
         AppController.shared.writeStatusFile()
+    }
+
+    /// On app launch, wait for the user instead of sitting stopped (with start-on-activity).
+    func armForLaunch() {
+        guard settings.startPomodoroOnActivity, status == .stopped else { return }
+        resetInterval(to: .pomodoro)
+        waitingSince = Date()
+        status = .waiting
     }
 
     /// Re-read durations when settings change while idle.
@@ -199,6 +213,8 @@ final class SessionManager: ObservableObject {
 
     private func tick() {
         let now = Date()
+        let slept = now.timeIntervalSince(lastTick) > Self.awayThreshold
+        lastTick = now
         if status == .running {
             elapsed = accumulated + (resumedAt.map { now.timeIntervalSince($0) } ?? 0)
             let lead = TimeInterval(settings.announcementLeadTime)
@@ -213,8 +229,15 @@ final class SessionManager: ObservableObject {
         } else if status == .waiting, waitsForActivity, let waitingSince, !Self.isScreenLocked {
             // Any mouse/keyboard input after the break ended means the user is back.
             // Input on the lock screen (e.g. waking the Mac) doesn't count.
-            let idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
-            if idle < now.timeIntervalSince(waitingSince) - 1 { start() }
+            if Self.idleTime < now.timeIntervalSince(waitingSince) - 1 { start() }
+        } else if status == .stopped, settings.startPomodoroOnActivity {
+            let idle = Self.idleTime
+            if slept || Self.isScreenLocked || idle >= Self.awayThreshold {
+                userWasAway = true
+            } else if userWasAway, idle < 1 {
+                userWasAway = false
+                start()
+            }
         }
     }
 
@@ -299,6 +322,10 @@ final class SessionManager: ObservableObject {
         guard settings.pauseOnLockScreen, status == .running, phase == .pomodoro else { return }
         pause()
         pausedByLock = true
+    }
+
+    private static var idleTime: TimeInterval {
+        CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
     }
 
     static var isScreenLocked: Bool {

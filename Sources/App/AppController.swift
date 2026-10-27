@@ -28,6 +28,7 @@ final class AppController: NSObject, NSApplicationDelegate {
         ]
         NotificationManager.shared.setUp()
         HotKeyManager.shared.reload()
+        session.armForLaunch()
         writeStatusFile()
         if AppSettings.shared.preferCompactSize {
             DispatchQueue.main.async { self.toggleCompact() }
